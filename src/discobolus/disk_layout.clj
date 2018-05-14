@@ -30,11 +30,32 @@
 (defn find-next-sector
   "Given a sector number, return that sector, or the next one available."
   [free-sectors wanted]
-  (first (filter #(>= % wanted) free-sectors)))
+  (let [result (first (filter #(>= % wanted) free-sectors))]
+    (if-not result
+      (first free-sectors)
+      result)))
+
+(defn sector-seq
+  "Given the remaining sectors, and interleave and number of sectors
+  needed. Return the sectors to use."
+  [current-sector interleave sectors-free sectors-needed total-sectors]
+  (let [next (mod (+ current-sector interleave) total-sectors)
+        next-sector (find-next-sector sectors-free next)]))
+
+(defn get-next-sector
+  ""
+  [starting-sector file-interleave sectors-free total-sectors]
+  (loop [result [] current-sector starting-sector sectors-free sectors-free]
+    (let [next (mod (+ current-sector file-interleave) total-sectors)
+          next-sector (find-next-sector (disj sectors-free current-sector) next)]
+      (if next-sector
+        (recur (conj result current-sector) next-sector
+               (disj sectors-free current-sector))
+        (conj result current-sector)))))
 
 (defn track-sector-seq
   "Given a set of sectors free and a file, return a vector containing
   the sector sequence and the set of remaining sectors free."
-  [interleave sectors-free current-sector file-size total-sectors]
+  [track sector interleave sectors-free file-size]
   (let [next (mod (+ current-sector interleave) total-sectors)
         next-sector (find-next-sector sectors-free next)]))
